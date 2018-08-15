@@ -1,1 +1,0 @@
-# NCTU CS Union
