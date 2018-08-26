@@ -1,7 +1,10 @@
 import React from 'react'
 import classNames from 'classnames'
 import {Link} from 'react-router-dom'
+import {connect} from 'react-redux'
+import {filterToggle} from '../Redux'
 import { withStyles } from '@material-ui/core/styles'
+import {withRouter} from 'react-router'
 import {
   AppBar,
   Toolbar,
@@ -12,7 +15,11 @@ import {
   Divider,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  FormControlLabel,
+  Switch,
+  Button,
+  Tooltip
 } from '@material-ui/core'
 // import MenuIcon from '@material-ui/icons/Menu'
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft'
@@ -23,6 +30,7 @@ const drawerWidth = 240
 const styles =(theme)=>({
   flex: {
     flexGrow: 1,
+    userSelect:'none'
   },
   appBar: {
     transition: theme.transitions.create(['margin', 'width'], {
@@ -124,6 +132,27 @@ class NavBar extends React.Component {
             <Typography variant="title" color="inherit" className={classes.flex}>
               NCTU CS Union
             </Typography>
+            {
+              this.props.location.pathname === '/' &&
+              <Tooltip title={this.props.filter?'僅顯示已繳系學會費':'顯示全部'}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={this.props.filter}
+                      onChange={this.props.filterToggle}
+                      color="secondary"
+                    />
+                  }
+                  label=""
+                />
+              </Tooltip>
+            }
+            {
+              this.props.location.pathname === '/login' &&
+              <Button color="inherit" onClick={() => (window.location.href = 'https://csunion.nctu.me/_api/oauth')}>
+                登入
+              </Button>
+            }
           </Toolbar>
         </AppBar>
         {LDrawer}
@@ -132,4 +161,12 @@ class NavBar extends React.Component {
   }
 }
 
-export default withStyles(styles)(NavBar)
+const mapState = (state) => ({
+  filter: state.filter
+})
+
+const mapDispatch = (dispatch) => ({
+  filterToggle: () => dispatch(filterToggle())
+})
+
+export default withStyles(styles)(connect(mapState, mapDispatch)(withRouter(NavBar)))

@@ -1,5 +1,6 @@
 import React from 'react'
 import { withStyles } from '@material-ui/core/styles'
+import {connect} from 'react-redux'
 import {
   Tabs,
   Tab,
@@ -19,15 +20,14 @@ import {
   Popover,
   Snackbar,
   Slide,
-  FormControlLabel,
-  Switch
+  Tooltip
 } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
 import SearchIcon from '@material-ui/icons/Search'
 import CloseIcon from '@material-ui/icons/Close';
 import axios from 'axios'
 
-const URL = 'http://localhost:3000'
+const URL = 'http://localhost:8080'
 
 function TransitionUp(props) {
   return <Slide {...props} direction="up" />;
@@ -99,8 +99,7 @@ class Paid extends React.Component{
       id: '',
       pop: false, // popover
       snack:false, // snackbar
-      status:false, // for update database
-      filter:true
+      status:false // for update database
     }
     this.changeIndex = this.changeIndex.bind(this)
     this.handleClose = this.handleClose.bind(this)
@@ -111,7 +110,7 @@ class Paid extends React.Component{
     this.handlePost = this.handlePost.bind(this)
     this.Year = (new Date().getFullYear() - 1911)-100 + 4 // 107 -> 11 = 7+4
     this.tab = []
-    for(let i=this.Year;i>3;i-=1){
+    for(let i=this.Year;i>4;i-=1){
       this.tab.push(`${("0"+i).substr(-2)}級`)
     }
   }
@@ -155,16 +154,6 @@ class Paid extends React.Component{
     return(
       <div className={classes.root}>
         <div className={classes.content}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={this.state.filter}
-              onChange={()=>this.setState({filter:!this.state.filter})}
-              color="primary"
-            />
-          }
-          label="僅顯示已繳交系學會費"
-        />
           <Tabs 
             value={this.state.Index} 
             onChange={this.changeIndex}
@@ -186,7 +175,7 @@ class Paid extends React.Component{
               this.state.all
               .filter(student=>
                 student.id.startsWith(("0"+(this.Year-this.state.Index-4)).substr(-2))
-                && ( !this.state.filter || student.paid === 1 )
+                && ( !this.props.filter || student.paid === 1 )
               ).sort((a,b)=> a.id.localeCompare(b.id, 'zh-Hant-TW'))
               .map((student,index)=>
                 <TableRow key={index} className={classes.row}>
@@ -198,15 +187,19 @@ class Paid extends React.Component{
             </TableBody>
           </Table>
         </div>
-        <Button variant="fab" className={classes.search} color="primary" onClick={this.handlePop}
-        buttonRef={node => {
-                this.anchorEl = node;
-              }}>
-          <SearchIcon/>
-        </Button>
-        <Button variant="fab" className={classes.add} color="secondary" onClick={this.handleOpen}>
-          <AddIcon/>
-        </Button>
+        <Tooltip title="查詢是否繳費" placement="left">
+          <Button variant="fab" className={classes.search} color="primary" onClick={this.handlePop}
+          buttonRef={node => {
+                  this.anchorEl = node;
+                }}>
+            <SearchIcon/>
+          </Button>
+        </Tooltip>
+        <Tooltip title="繳費登記" placement="left">
+          <Button variant="fab" className={classes.add} color="secondary" onClick={this.handleOpen}>
+            <AddIcon/>
+          </Button>
+        </Tooltip>   
         <Dialog
           fullScreen={fullScreen}
           open={this.state.open}
@@ -230,7 +223,7 @@ class Paid extends React.Component{
               <div className={fullScreen?classes.div:classes.span}>{`${this.state.all.filter(s=>s.id === this.state.id.trim()).map(s=>`${s.name} (${s.paid?'已繳費':'尚未繳費'})`).join('')}`}</div>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.handleClose} color="primary">
+            <Button onClick={this.handleClose} color="secondary">
               捨棄
             </Button>
             <Button onClick={this.handlePost} color="primary" disabled={this.state.all.some(s=>(s.id === this.state.id.trim() && s.paid === 1))}>
@@ -291,5 +284,8 @@ class Paid extends React.Component{
     )
   }
 }
+const mapState = (state) => ({
+  filter: state.filter
+})
 
-export default withMobileDialog()(withStyles(styles)(Paid))
+export default withMobileDialog()(withStyles(styles)(connect(mapState)(Paid)))

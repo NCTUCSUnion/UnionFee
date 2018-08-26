@@ -1,9 +1,10 @@
 import React from 'react'
-import {BrowserRouter,Route,Switch} from 'react-router-dom'
+import {BrowserRouter,Route,Switch,Redirect} from 'react-router-dom'
 import { withStyles } from '@material-ui/core/styles'
 import classNames from 'classnames'
 import NavBar from './Component/NavBar'
 import Paid from './Page/Paid'
+import Login from './Page/Login'
 
 const styles = () =>({
   open:{
@@ -24,6 +25,19 @@ class Router extends React.Component{
       this.setState({open:value})
   }
   render(){
+    const isLogin = (Component) => {
+      let match = document.cookie.match(new RegExp(`(^| )csunion=([^;]+)`))
+      if (match) {
+        return () => <Component />
+      } else {
+        return () => (
+          <Redirect to={{
+            pathname: '/login',
+            state: { redirected: true }
+          }} />
+        )
+      }
+    }
     const {classes} = this.props
     return(
       <BrowserRouter>
@@ -31,7 +45,8 @@ class Router extends React.Component{
           <Route path='/' render={()=><NavBar check={this.check}/>}/>
           <div className={classNames(this.state.open && classes.open)}>
             <Switch>
-              <Route path='/' component={Paid}/>
+              {/* <Route exact path='/login' component={Login}/> */}
+              <Route exact path='/' component={Paid}/>
             </Switch>
           </div>
         </React.Fragment>
