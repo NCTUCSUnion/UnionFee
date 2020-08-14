@@ -174,7 +174,10 @@ class Paid extends React.Component{
             {
               this.state.all
               .filter(student=>
-                student.id.startsWith(("0"+(this.Year-this.state.Index-4)).substr(-2))
+                (
+                  (student.id.length === 7 && student.id.startsWith(("0"+(this.Year-this.state.Index-4)).substr(-2)))
+                   || (student.id.length === 9 && student.id.startsWith(("10"+(this.Year-this.state.Index-4)).substr(-3)))
+                )
                 && ( !this.props.filter || student.paid === 1 )
               ).sort((a,b)=> a.id.localeCompare(b.id, 'zh-Hant-TW'))
               .map((student,index)=>
