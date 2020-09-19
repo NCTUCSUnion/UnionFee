@@ -1,6 +1,6 @@
 import React from 'react'
 import { withStyles } from '@material-ui/core/styles'
-import {connect} from 'react-redux'
+import { connect } from 'react-redux'
 import {
   Tabs,
   Tab,
@@ -27,18 +27,20 @@ import SearchIcon from '@material-ui/icons/Search'
 import CloseIcon from '@material-ui/icons/Close';
 import axios from 'axios'
 
+axios.defaults.withCredentials = true
+
 const URL = 'http://localhost:8080'
 
 function TransitionUp(props) {
   return <Slide {...props} direction="up" />;
 }
 
-const styles = (theme) =>({
+const styles = (theme) => ({
   root: {
     flexGrow: 1,
   },
   content: {
-    position:'relative',
+    position: 'relative',
     flexGrow: 1,
     padding: theme.spacing.unit * 3,
     transition: theme.transitions.create('margin', {
@@ -46,9 +48,9 @@ const styles = (theme) =>({
       duration: theme.transitions.duration.leavingScreen,
     }),
   },
-  table:{
-    width:'95%',
-    margin:'0 auto',
+  table: {
+    width: '95%',
+    margin: '0 auto',
     marginTop: 10
   },
   head: {
@@ -66,7 +68,7 @@ const styles = (theme) =>({
       backgroundColor: theme.palette.background.default,
     },
   },
-  search:{
+  search: {
     position: 'fixed',
     bottom: theme.spacing.unit * 14,
     right: theme.spacing.unit * 4,
@@ -76,11 +78,11 @@ const styles = (theme) =>({
     bottom: theme.spacing.unit * 4,
     right: theme.spacing.unit * 4,
   },
-  span:{
-    display:'inline',
-    marginLeft:theme.spacing.unit *2
+  span: {
+    display: 'inline',
+    marginLeft: theme.spacing.unit * 2
   },
-  div:{},
+  div: {},
   snackbar: {
     position: 'absolute',
   },
@@ -89,17 +91,18 @@ const styles = (theme) =>({
   },
 })
 
-class Paid extends React.Component{
-  constructor(props){
+class Paid extends React.Component {
+  constructor(props) {
     super(props)
-    this.state={
-      all:[],
+    this.state = {
+      all: [],
       Index: 0,
       open: false, // dialog
       id: '',
       pop: false, // popover
-      snack:false, // snackbar
-      status:false // for update database
+      snack: false, // snackbar
+      status: false, // for update database
+      login: false
     }
     this.changeIndex = this.changeIndex.bind(this)
     this.handleClose = this.handleClose.bind(this)
@@ -108,58 +111,70 @@ class Paid extends React.Component{
     this.handlePop = this.handlePop.bind(this)
     this.handleClosePop = this.handleClosePop.bind(this)
     this.handlePost = this.handlePost.bind(this)
-    this.Year = (new Date().getFullYear() - 1911)-100 + 4 // 107 -> 11 = 7+4
+    this.Year = (new Date().getFullYear() - 1911) - 100 + 4 // 107 -> 11 = 7+4
     this.tab = []
-    for(let i=this.Year;i>4;i-=1){
-      this.tab.push(`${("0"+i).substr(-2)}級`)
+    for (let i = this.Year; i > 4; i -= 1) {
+      this.tab.push(`${("0" + i).substr(-2)}級`)
     }
   }
-  componentDidMount(){
+  componentDidMount() {
     axios.get(`${URL}/_api/students`).then(
-      res=>this.setState({all:res.data})
+      res => this.setState({ all: res.data })
     )
   }
-  changeIndex(e,v){
-    this.setState({Index:v})
+  changeIndex(e, v) {
+    this.setState({ Index: v })
   }
-  handleOpen(){
-    this.setState({open:true})
+  handleOpen() {
+    this.setState({ open: true })
   }
-  handlePop(){
-    this.setState({pop:true})
+  handlePop() {
+    this.setState({ pop: true })
   }
-  handleClosePop(){
-    this.setState({pop:false,id:''})
+  handleClosePop() {
+    this.setState({ pop: false, id: '' })
   }
-  handleClose(){
-    this.setState({open:false,id:''})
+  handleClose() {
+    this.setState({ open: false, id: '' })
   }
-  handleChange(e){
-    this.setState({id:e})
+  handleChange(e) {
+    this.setState({ id: e })
   }
-  handlePost(){
-    axios.post(`${URL}/_api/pay`,{id:this.state.id.trim()}).then(
-      res=> {
-      this.setState({
-        status:res.data,
-        snack:true,
-        open:false,
-        id:''
-      })
+  handlePost() {
+    axios.post(`${URL}/_api/pay`, { id: this.state.id.trim() }).then(
+      res => {
+        this.setState({
+          status: res.data,
+          snack: true,
+          open: false,
+          id: ''
+        })
       }
     )
   }
-  render(){
-    const {classes,fullScreen} = this.props
-    return(
+  render() {
+    if (!this.state.login) {
+      axios.post(`${URL}/_api/fee_check`, {}).then(
+        res => {
+          if (!res.data)
+            window.location.href = '/login'
+          else
+            this.setState({
+              login: true
+            })
+        }
+      )
+    }
+    const { classes, fullScreen } = this.props
+    return (
       <div className={classes.root}>
         <div className={classes.content}>
-          <Tabs 
-            value={this.state.Index} 
+          <Tabs
+            value={this.state.Index}
             onChange={this.changeIndex}
             scrollable
             scrollButtons="on">
-            {this.tab.map((tab,index) =>
+            {this.tab.map((tab, index) =>
               <Tab key={index} value={index} label={tab} />
             )}
           </Tabs>
@@ -171,38 +186,38 @@ class Paid extends React.Component{
               </TableRow>
             </TableHead>
             <TableBody>
-            {
-              this.state.all
-              .filter(student=>
-                (
-                  (student.id.length === 7 && student.id.startsWith(("0"+(this.Year-this.state.Index-4)).substr(-2)))
-                   || (student.id.length === 9 && student.id.startsWith(("1" + ("0"+(this.Year-this.state.Index-4)).substr(-2))))
-                )
-                && ( !this.props.filter || student.paid === 1 )
-              ).sort((a,b)=> a.id.localeCompare(b.id, 'zh-Hant-TW'))
-              .map((student,index)=>
-                <TableRow key={index} className={classes.row}>
-                  <TableCell  className={classes.body}>{student.id}</TableCell>
-                  <TableCell  className={classes.body}>{student.name}</TableCell>
-                </TableRow>
-              )
-            }
+              {
+                this.state.all
+                  .filter(student =>
+                    (
+                      (student.id.length === 7 && student.id.startsWith(("0" + (this.Year - this.state.Index - 4)).substr(-2)))
+                      || (student.id.length === 9 && student.id.startsWith(("1" + ("0" + (this.Year - this.state.Index - 4)).substr(-2))))
+                    )
+                    && (!this.props.filter || student.paid === 1)
+                  ).sort((a, b) => a.id.localeCompare(b.id, 'zh-Hant-TW'))
+                  .map((student, index) =>
+                    <TableRow key={index} className={classes.row}>
+                      <TableCell className={classes.body}>{student.id}</TableCell>
+                      <TableCell className={classes.body}>{student.name}</TableCell>
+                    </TableRow>
+                  )
+              }
             </TableBody>
           </Table>
         </div>
         <Tooltip title="查詢是否繳費" placement="left">
           <Button variant="fab" className={classes.search} color="primary" onClick={this.handlePop}
-          buttonRef={node => {
-                  this.anchorEl = node;
-                }}>
-            <SearchIcon/>
+            buttonRef={node => {
+              this.anchorEl = node;
+            }}>
+            <SearchIcon />
           </Button>
         </Tooltip>
         <Tooltip title="繳費登記" placement="left">
           <Button variant="fab" className={classes.add} color="secondary" onClick={this.handleOpen}>
-            <AddIcon/>
+            <AddIcon />
           </Button>
-        </Tooltip>   
+        </Tooltip>
         <Dialog
           fullScreen={fullScreen}
           open={this.state.open}
@@ -210,32 +225,32 @@ class Paid extends React.Component{
         >
           <DialogTitle>{"繳費登記"}</DialogTitle>
           <DialogContent>
-              <DialogContentText>
-                此操作會存入資料庫，請確認登記學號姓名是否正確
+            <DialogContentText>
+              此操作會存入資料庫，請確認登記學號姓名是否正確
               </DialogContentText>
-              <TextField
-                label="學號"
-                value={this.state.id}
-                onChange={e=>this.handleChange(e.target.value)}
-                placeholder="請輸入學號"
-                margin="normal"
-                type='tel'
-                autoFocus
-                onKeyPress={(e)=>{if(e.key === 'Enter')this.handlePost()}}
-              />
-              <div className={fullScreen?classes.div:classes.span}>{`${this.state.all.filter(s=>s.id === this.state.id.trim()).map(s=>`${s.name} (${s.paid?'已繳費':'尚未繳費'})`).join('')}`}</div>
+            <TextField
+              label="學號"
+              value={this.state.id}
+              onChange={e => this.handleChange(e.target.value)}
+              placeholder="請輸入學號"
+              margin="normal"
+              type='tel'
+              autoFocus
+              onKeyPress={(e) => { if (e.key === 'Enter') this.handlePost() }}
+            />
+            <div className={fullScreen ? classes.div : classes.span}>{`${this.state.all.filter(s => s.id === this.state.id.trim()).map(s => `${s.name} (${s.paid ? '已繳費' : '尚未繳費'})`).join('')}`}</div>
           </DialogContent>
           <DialogActions>
             <Button onClick={this.handleClose} color="secondary">
               捨棄
             </Button>
-            <Button onClick={this.handlePost} color="primary" disabled={this.state.all.some(s=>(s.id === this.state.id.trim() && s.paid === 1))}>
+            <Button onClick={this.handlePost} color="primary" disabled={this.state.all.some(s => (s.id === this.state.id.trim() && s.paid === 1))}>
               確認
             </Button>
           </DialogActions>
         </Dialog>
 
-        <Popover 
+        <Popover
           open={this.state.pop}
           anchorEl={this.anchorEl}
           anchorOrigin={{
@@ -248,41 +263,41 @@ class Paid extends React.Component{
           }}
           onClose={this.handleClosePop}
         >
-        <DialogTitle>{"搜尋"}</DialogTitle>
+          <DialogTitle>{"搜尋"}</DialogTitle>
           <DialogContent>
-              <DialogContentText>
-                使用學號搜尋是否有繳交系學會費
+            <DialogContentText>
+              使用學號搜尋是否有繳交系學會費
               </DialogContentText>
-              <TextField
-                label="學號"
-                value={this.state.id}
-                onChange={e=>this.handleChange(e.target.value)}
-                placeholder="請輸入學號"
-                margin="normal"
-                type='tel'
-                autoFocus
-              />
-              <div>{`${this.state.all.filter(s=>s.id === this.state.id.trim()).map(s=>`${s.name} (${s.paid?'已繳費':'尚未繳費'})`).join('')}`}</div>
+            <TextField
+              label="學號"
+              value={this.state.id}
+              onChange={e => this.handleChange(e.target.value)}
+              placeholder="請輸入學號"
+              margin="normal"
+              type='tel'
+              autoFocus
+            />
+            <div>{`${this.state.all.filter(s => s.id === this.state.id.trim()).map(s => `${s.name} (${s.paid ? '已繳費' : '尚未繳費'})`).join('')}`}</div>
           </DialogContent>
         </Popover>
         <Snackbar
-            open={this.state.snack}
-            autoHideDuration={2000}
-            onClose={()=>this.setState({snack:false})}
-            TransitionComponent={TransitionUp}
-            anchorOrigin={{horizontal:'left',vertical:'bottom'}}
-            ContentProps={{
-              'aria-describedby': 'message',
-              className: classes.snackbarContent,
-            }}
-            message={<span id='message'>{`${this.state.status.success?`新增成功 id=${this.state.status.id}`:`新增失敗 id=${this.state.status.id}`}`}</span>}
-            action={
-              <Button color="inherit" size="small" onClick={()=>this.setState({snack:false})}>
-                <CloseIcon/>
-              </Button>
-            }
-            className={classes.snackbar}
-          />
+          open={this.state.snack}
+          autoHideDuration={2000}
+          onClose={() => this.setState({ snack: false })}
+          TransitionComponent={TransitionUp}
+          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+          ContentProps={{
+            'aria-describedby': 'message',
+            className: classes.snackbarContent,
+          }}
+          message={<span id='message'>{`${this.state.status.success ? `新增成功 id=${this.state.status.id}` : `新增失敗 id=${this.state.status.id}`}`}</span>}
+          action={
+            <Button color="inherit" size="small" onClick={() => this.setState({ snack: false })}>
+              <CloseIcon />
+            </Button>
+          }
+          className={classes.snackbar}
+        />
       </div>
     )
   }
