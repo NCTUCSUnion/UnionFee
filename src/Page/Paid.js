@@ -141,13 +141,21 @@ class Paid extends React.Component {
     this.setState({ id: e })
   }
   handlePost() {
-    axios.post(`${URL}/_api/pay`, { id: this.state.id.trim() }).then(
+    const id = this.state.id.trim()
+    axios.post(`${URL}/_api/pay`, { id: id }).then(
       res => {
+        const all = this.state.all.map(ele => ({ ...ele }))
+        for (let i = 0 ; i<all.length ; i++){
+          if (all[i].id === id) {
+            all[i].paid = 1
+          }
+        }
         this.setState({
           status: res.data,
           snack: true,
           open: false,
-          id: ''
+          id: '',
+          all: all
         })
       }
     )

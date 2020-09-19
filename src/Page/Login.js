@@ -47,6 +47,7 @@ const styles = (theme) => ({
   container: {
     margin: '0 auto',
     width: 'fit-content',
+    maxWidth: '90%',
     backgroundColor: '#f5f5f5',
     boxShadow: '1px 1px 2px #999999',
     padding: '20px',
@@ -60,10 +61,14 @@ const styles = (theme) => ({
     rowGap: '10px'
   },
   row: {
+    width: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     columnGap: '5px'
+  },
+  textfield: {
+    flex: '1 1 0'
   }
 })
 
@@ -106,6 +111,12 @@ class Login extends React.Component {
     })
   }
 
+  handleKeyPress(evt) {
+    if (evt.key === 'Enter'){
+      this.tryLogin()
+    }
+  }
+
   render() {
     axios.post(`${URL}/_api/fee_check`, {}).then(
       res => {
@@ -121,11 +132,15 @@ class Login extends React.Component {
             <div className={classes.column}>
               <div className={classes.row}>
                 <InputLabel htmlFor="username">Username</InputLabel>
-                <TextField id="username" name="username" aria-describedby="Username" onChange={evt => this.handleUsernameChange(evt)} />
+                <TextField className={classes.textfield} id="username" name="username" aria-describedby="Username"
+                    onChange={evt => this.handleUsernameChange(evt)}
+                    onKeyPress={evt => this.handleKeyPress(evt)} />
               </div>
               <div className={classes.row}>
                 <InputLabel htmlFor="password">Password</InputLabel>
-                <TextField id="password" name="password" aria-describedby="Password" type="password" onChange={evt => this.handlePasswordChange(evt)} />
+                <TextField className={classes.textfield} id="password" name="password" aria-describedby="Password" type="password"
+                    onChange={evt => this.handlePasswordChange(evt)}
+                    onKeyPress={evt => this.handleKeyPress(evt)} />
               </div>
               <Button type="button" variant="outlined" color="primary" onClick={() => this.tryLogin()}>
                 登入
