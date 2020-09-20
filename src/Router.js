@@ -33,8 +33,8 @@ class Router extends React.Component {
           <Route path='/' render={() => <NavBar check={this.check} />} />
           <div className={classNames(this.state.open && classes.open)}>
             <Switch>
-              <Route exact path='/login' component={Login} />
-              <Route exact path='/' component={Paid} />
+              <Route exact path='/login' component={() => <Login />} />
+              <Route exact path='/' component={() => <Paid />} />
             </Switch>
           </div>
         </React.Fragment>

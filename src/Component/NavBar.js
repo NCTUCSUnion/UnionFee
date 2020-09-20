@@ -140,7 +140,7 @@ class NavBar extends React.Component {
               color="inherit" aria-label="Menu" onClick={this.drawerOpen}>
               <MenuIcon />
             </IconButton> */}
-            <Typography variant="title" color="inherit" className={classes.flex}>
+            <Typography variant="subtitle1" color="inherit" className={classes.flex}>
               NCTU CS Union
             </Typography>
             {

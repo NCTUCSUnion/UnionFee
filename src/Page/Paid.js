@@ -10,6 +10,7 @@ import {
   TableRow,
   TableCell,
   Button,
+  Fab,
   withMobileDialog,
   Dialog,
   DialogTitle,
@@ -18,22 +19,16 @@ import {
   DialogActions,
   TextField,
   Popover,
-  Snackbar,
-  Slide,
   Tooltip
 } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
 import SearchIcon from '@material-ui/icons/Search'
-import CloseIcon from '@material-ui/icons/Close';
 import axios from 'axios'
+import { withSnackbar } from 'notistack'
 
 axios.defaults.withCredentials = true
 
 const URL = 'http://localhost:8080'
-
-function TransitionUp(props) {
-  return <Slide {...props} direction="up" />;
-}
 
 const styles = (theme) => ({
   root: {
@@ -42,7 +37,7 @@ const styles = (theme) => ({
   content: {
     position: 'relative',
     flexGrow: 1,
-    padding: theme.spacing.unit * 3,
+    padding: theme.spacing(3),
     transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -70,17 +65,17 @@ const styles = (theme) => ({
   },
   search: {
     position: 'fixed',
-    bottom: theme.spacing.unit * 14,
-    right: theme.spacing.unit * 4,
+    bottom: theme.spacing(14),
+    right: theme.spacing(4),
   },
   add: {
     position: 'fixed',
-    bottom: theme.spacing.unit * 4,
-    right: theme.spacing.unit * 4,
+    bottom: theme.spacing(4),
+    right: theme.spacing(4),
   },
   span: {
     display: 'inline',
-    marginLeft: theme.spacing.unit * 2
+    marginLeft: theme.spacing(2)
   },
   div: {},
   snackbar: {
@@ -95,14 +90,12 @@ class Paid extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      all: [],
-      Index: 0,
-      open: false, // dialog
-      id: '',
-      pop: false, // popover
-      snack: false, // snackbar
-      status: false, // for update database
-      login: false
+      all: [],        // The student list
+      Index: 0,       // Currently opened tab
+      open: false,    // The dialog (Search/Add)
+      id: '',         // The Textfield value in dialogs
+      pop: false,     // popover
+      login: false,   // User logged-in
     }
     this.changeIndex = this.changeIndex.bind(this)
     this.handleClose = this.handleClose.bind(this)
@@ -117,10 +110,31 @@ class Paid extends React.Component {
       this.tab.push(`${("0" + i).substr(-2)}級`)
     }
   }
-  componentDidMount() {
+  fetchStudentList() {
     axios.get(`${URL}/_api/students`).then(
       res => this.setState({ all: res.data })
     )
+  }
+  componentDidMount() {
+    if (this.state.login) {
+      this.fetchStudentList()
+    }
+    else {
+      axios.post(`${URL}/_api/fee_check`, {}).then(
+        res => {
+          if (!res.data)
+            window.location.href = '/login'
+          else {
+            this.setState({ login: true })
+            this.fetchStudentList()
+          }
+        }
+      ).catch(
+        err => {
+          window.location.href = '/login'
+        }
+      )
+    }
   }
   changeIndex(e, v) {
     this.setState({ Index: v })
@@ -144,14 +158,12 @@ class Paid extends React.Component {
     axios.post(`${URL}/_api/pay`, { id: this.state.id.trim() }).then(
       res => {
         this.setState({
-          status: res.data,
-          snack: true,
           open: false,
           id: ''
         })
-        if (res.data.success){
+        if (res.data.success) {
           const all = this.state.all.map(ele => ({ ...ele }))
-          for (let i = 0 ; i<all.length ; i++){
+          for (let i = 0; i < all.length; i++) {
             if (all[i].id === res.data.id) {
               all[i].paid = 1
               break
@@ -160,23 +172,29 @@ class Paid extends React.Component {
           this.setState({
             all: all
           })
+          this.props.enqueueSnackbar(`新增成功 id=${res.data.id}`, {
+            variant: 'success',
+          })
         }
+        else {
+          this.props.enqueueSnackbar(`新增失敗 id=${res.data.id}`, {
+            variant: 'error',
+          })
+        }
+      }
+    ).catch(
+      err => {
+        this.setState({
+          open: false,
+          id: ''
+        })
+        this.props.enqueueSnackbar(err.toString(), {
+          variant: 'error',
+        })
       }
     )
   }
   render() {
-    if (!this.state.login) {
-      axios.post(`${URL}/_api/fee_check`, {}).then(
-        res => {
-          if (!res.data)
-            window.location.href = '/login'
-          else
-            this.setState({
-              login: true
-            })
-        }
-      )
-    }
     const { classes, fullScreen } = this.props
     return (
       <div className={classes.root}>
@@ -184,7 +202,7 @@ class Paid extends React.Component {
           <Tabs
             value={this.state.Index}
             onChange={this.changeIndex}
-            scrollable
+            scrollable="true"
             scrollButtons="on">
             {this.tab.map((tab, index) =>
               <Tab key={index} value={index} label={tab} />
@@ -218,17 +236,17 @@ class Paid extends React.Component {
           </Table>
         </div>
         <Tooltip title="查詢是否繳費" placement="left">
-          <Button variant="fab" className={classes.search} color="primary" onClick={this.handlePop}
+          <Fab className={classes.search} color="primary" onClick={this.handlePop}
             buttonRef={node => {
               this.anchorEl = node;
             }}>
             <SearchIcon />
-          </Button>
+          </Fab>
         </Tooltip>
         <Tooltip title="繳費登記" placement="left">
-          <Button variant="fab" className={classes.add} color="secondary" onClick={this.handleOpen}>
+          <Fab className={classes.add} color="secondary" onClick={this.handleOpen}>
             <AddIcon />
-          </Button>
+          </Fab>
         </Tooltip>
         <Dialog
           fullScreen={fullScreen}
@@ -292,24 +310,6 @@ class Paid extends React.Component {
             <div>{`${this.state.all.filter(s => s.id === this.state.id.trim()).map(s => `${s.name} (${s.paid ? '已繳費' : '尚未繳費'})`).join('')}`}</div>
           </DialogContent>
         </Popover>
-        <Snackbar
-          open={this.state.snack}
-          autoHideDuration={2000}
-          onClose={() => this.setState({ snack: false })}
-          TransitionComponent={TransitionUp}
-          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          ContentProps={{
-            'aria-describedby': 'message',
-            className: classes.snackbarContent,
-          }}
-          message={<span id='message'>{`${this.state.status.success ? `新增成功 id=${this.state.status.id}` : `新增失敗 id=${this.state.status.id}`}`}</span>}
-          action={
-            <Button color="inherit" size="small" onClick={() => this.setState({ snack: false })}>
-              <CloseIcon />
-            </Button>
-          }
-          className={classes.snackbar}
-        />
       </div>
     )
   }
@@ -318,4 +318,4 @@ const mapState = (state) => ({
   filter: state.filter
 })
 
-export default withMobileDialog()(withStyles(styles)(connect(mapState)(Paid)))
+export default withMobileDialog()(withSnackbar(withStyles(styles)(connect(mapState)(Paid))))

@@ -19,7 +19,7 @@ const styles = (theme) => ({
   content: {
     position: 'relative',
     flexGrow: 1,
-    padding: theme.spacing.unit * 3,
+    padding: theme.spacing(3),
     transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -117,13 +117,16 @@ class Login extends React.Component {
     }
   }
 
-  render() {
+  componentDidMount() {
     axios.post(`${URL}/_api/fee_check`, {}).then(
       res => {
         if (res.data)
           window.location.href = '/'
       }
     )
+  }
+
+  render() {
     const { classes } = this.props
     return (
       <div className={classes.root}>

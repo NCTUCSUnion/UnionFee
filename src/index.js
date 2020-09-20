@@ -8,21 +8,24 @@ import {createStore} from 'redux'
 import {Provider} from 'react-redux'
 import Router from './Router'
 import registerServiceWorker from './registerServiceWorker'
+import { SnackbarProvider } from 'notistack'
 
 const store = createStore(Reducer)
 
 const theme = createMuiTheme({
   palette: {
     primary: blue,
-    secondary:pink,
+    secondary: pink,
   },
 })
 
 ReactDOM.render(
   <MuiThemeProvider theme={theme}>
-    <Provider store={store}>
-      <Router />
-    </Provider>
+    <SnackbarProvider maxSnack={3}>
+      <Provider store={store}>
+        <Router />
+      </Provider>
+    </SnackbarProvider>
   </MuiThemeProvider>, document.getElementById('root'))
 
 registerServiceWorker()
