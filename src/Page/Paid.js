@@ -48,6 +48,7 @@ const styles = (theme) => ({
     marginTop: 10
   },
   head: {
+    width: '50%',
     textAlign: 'center',
     backgroundColor: theme.palette.common.black,
     color: theme.palette.common.white,
