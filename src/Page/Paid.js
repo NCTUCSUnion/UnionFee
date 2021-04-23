@@ -23,6 +23,7 @@ import {
 } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
 import SearchIcon from '@material-ui/icons/Search'
+import LibraryBooksIcon from '@material-ui/icons/LibraryBooks'
 import axios from 'axios'
 import { withSnackbar } from 'notistack'
 import API_URL from '../constants'
@@ -65,8 +66,17 @@ const styles = (theme) => ({
   },
   search: {
     position: 'fixed',
+    bottom: theme.spacing(24),
+    right: theme.spacing(4),
+  },
+  batch: {
+    position: 'fixed',
     bottom: theme.spacing(14),
     right: theme.spacing(4),
+    background: '#4caf50',
+    '&:hover': {
+      background: '#388e3c',
+    },
   },
   add: {
     position: 'fixed',
@@ -90,19 +100,31 @@ class Paid extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      all: [],        // The student list
-      Index: 0,       // Currently opened tab
-      open: false,    // The dialog (Search/Add)
-      id: '',         // The Textfield value in dialogs
-      pop: false,     // popover
-      login: false,   // User logged-in
+      all: [],                // The student list
+      Index: 0,               // Currently opened tab
+      open: false,            // The dialog (Search/Add)
+      id: '',                 // The Textfield value in dialogs
+      pop: false,             // popover
+      login: false,           // User logged-in
+      openBatch: false,       // The dialog (Batch Search)
+      idBatch: '',            // The Textfield in batch dialog
+      resultBatch: ['', ''],  // The Batch Results
+      id2paid: {},            // The map from id to paid
     }
     this.changeIndex = this.changeIndex.bind(this)
+
     this.handleClose = this.handleClose.bind(this)
     this.handleOpen = this.handleOpen.bind(this)
     this.handleChange = this.handleChange.bind(this)
+
+    this.handleCloseBatch = this.handleCloseBatch.bind(this)
+    this.handleOpenBatch = this.handleOpenBatch.bind(this)
+    this.handleChangeBatch = this.handleChangeBatch.bind(this)
+    this.handleBatchQuery = this.handleBatchQuery.bind(this)
+
     this.handlePop = this.handlePop.bind(this)
     this.handleClosePop = this.handleClosePop.bind(this)
+
     this.handlePost = this.handlePost.bind(this)
     this.Year = (new Date().getFullYear() - 1911) - 100 + 4 // 107 -> 11 = 7+4
     this.tab = []
@@ -111,8 +133,12 @@ class Paid extends React.Component {
     }
   }
   fetchStudentList() {
-    axios.get(`${API_URL}/students`).then(
-      res => this.setState({ all: res.data })
+    axios.get(`${API_URL}/students`).then(res => res.data).then(
+      all => {
+        const id2paid = {}
+        all.forEach(item => id2paid[item.id] = (item.paid === 1))
+        this.setState({ all, id2paid })
+      }
     )
   }
   componentDidMount() {
@@ -136,17 +162,13 @@ class Paid extends React.Component {
       )
     }
   }
+
   changeIndex(e, v) {
     this.setState({ Index: v })
   }
+
   handleOpen() {
     this.setState({ open: true })
-  }
-  handlePop() {
-    this.setState({ pop: true })
-  }
-  handleClosePop() {
-    this.setState({ pop: false, id: '' })
   }
   handleClose() {
     this.setState({ open: false, id: '' })
@@ -154,6 +176,38 @@ class Paid extends React.Component {
   handleChange(e) {
     this.setState({ id: e })
   }
+
+  handleOpenBatch() {
+    this.setState({ openBatch: true })
+  }
+  handleCloseBatch() {
+    this.setState({ openBatch: false, idBatch: '', resultBatch: ['', ''] })
+  }
+  handleChangeBatch(e) {
+    this.setState({ idBatch: e })
+  }
+  handleBatchQuery() {
+    const paid = []
+    const notpaid = []
+    this.state.idBatch
+      .split('\n').filter(e => e)
+      .map(e => e.trim().length < 7 ? ('0000000' + e.trim()).slice(-7) : e.trim())
+      .forEach(e => {
+        if (this.state.id2paid[e])
+          paid.push(e)
+        else
+          notpaid.push(e)
+      })
+    this.setState({ resultBatch: [paid.sort().join('\n'), notpaid.sort().join('\n')] })
+  }
+
+  handlePop() {
+    this.setState({ pop: true })
+  }
+  handleClosePop() {
+    this.setState({ pop: false, id: '' })
+  }
+
   handlePost() {
     axios.post(`${API_URL}/pay`, { id: this.state.id.trim() }).then(
       res => {
@@ -163,14 +217,16 @@ class Paid extends React.Component {
         })
         if (res.data.success) {
           const all = this.state.all.map(ele => ({ ...ele }))
+          const id2paid = { ...this.state.id2paid }
           for (let i = 0; i < all.length; i++) {
             if (all[i].id === res.data.id) {
               all[i].paid = 1
               break
             }
           }
+          id2paid[res.data.id] = true
           this.setState({
-            all: all
+            all, id2paid
           })
           this.props.enqueueSnackbar(`新增成功 id=${res.data.id}`, {
             variant: 'success',
@@ -243,11 +299,17 @@ class Paid extends React.Component {
             <SearchIcon />
           </Fab>
         </Tooltip>
+        <Tooltip title="批量分類查詢" placement="left">
+          <Fab className={classes.batch} color="secondary" onClick={this.handleOpenBatch}>
+            <LibraryBooksIcon />
+          </Fab>
+        </Tooltip>
         <Tooltip title="繳費登記" placement="left">
           <Fab className={classes.add} color="secondary" onClick={this.handleOpen}>
             <AddIcon />
           </Fab>
         </Tooltip>
+
         <Dialog
           fullScreen={fullScreen}
           open={this.state.open}
@@ -276,6 +338,100 @@ class Paid extends React.Component {
             </Button>
             <Button onClick={this.handlePost} color="primary" disabled={this.state.all.some(s => (s.id === this.state.id.trim() && s.paid === 1))}>
               確認
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          fullScreen={fullScreen}
+          open={this.state.openBatch}
+          onClose={this.handleCloseBatch}
+          maxWidth='sm'
+          fullWidth={true}
+        >
+          <DialogTitle>批量分類查詢</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              將學號分行輸入下方欄位後按下分類按鈕
+              </DialogContentText>
+            {
+              fullScreen ?
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <TextField label="輸入學號" multiline rows={6} autoFocus
+                    value={this.state.idBatch} placeholder="請輸入學號"
+                    margin="normal" variant="outlined" fullWidth
+                    onChange={e => this.handleChangeBatch(e.target.value)}
+                  />
+                  <Button variant="contained" color="primary" disableElevation style={{
+                    height: 'max-content',
+                    // margin: '8px 0px'
+                  }} onClick={this.handleBatchQuery}>分類</Button>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between'
+                  }}>
+                    <TextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
+                      margin="normal" variant="outlined"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                    &nbsp;
+                    <TextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
+                      margin="normal" variant="outlined"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </div>
+                </div> :
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <TextField label="輸入學號" multiline rows={15} autoFocus
+                    value={this.state.idBatch} placeholder="請輸入學號"
+                    margin="normal" variant="outlined"
+                    onChange={e => this.handleChangeBatch(e.target.value)}
+                  />
+                  <Button variant="contained" color="primary" disableElevation style={{
+                    height: 'max-content',
+                    margin: '0px 16px'
+                  }} onClick={this.handleBatchQuery}>分類</Button>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <TextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
+                      margin="normal" variant="outlined"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                    <TextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
+                      margin="normal" variant="outlined"
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </div>
+                </div>
+            }
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={this.handleCloseBatch} color="primary">
+              關閉
             </Button>
           </DialogActions>
         </Dialog>
