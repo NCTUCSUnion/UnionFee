@@ -25,9 +25,9 @@ import {
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft'
 import DoneIcon from '@material-ui/icons/Done'
 import axios from 'axios'
+import API_URL from '../constants'
 
 axios.defaults.withCredentials = true
-const URL = 'http://localhost:8080'
 
 const drawerWidth = 240
 
@@ -100,7 +100,7 @@ class NavBar extends React.Component {
     this.setState({ open: false })
   }
   logout() {
-    axios.post(`${URL}/_api/fee_logout`, {}).then(
+    axios.post(`${API_URL}/fee_logout`, {}).then(
       res => {
         window.location.href = '/login'
       }

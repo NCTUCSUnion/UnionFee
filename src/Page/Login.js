@@ -6,10 +6,10 @@ import {
   Button
 } from '@material-ui/core'
 import axios from 'axios'
+import API_URL from '../constants'
 
 axios.defaults.withCredentials = true
 
-const URL = 'http://localhost:8080'
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
@@ -82,12 +82,12 @@ class Login extends React.Component {
   }
 
   tryLogin() {
-    axios.post(`${URL}/_api/fee_auth`, {
+    axios.post(`${API_URL}/fee_auth`, {
       username: this.state.username,
       password: this.state.password
-    }).then(
-      res => {
-        if (res.data)
+    }).then(res => res.data).then(
+      json => {
+        if (json.login)
           window.location.href = '/'
         else
           window.location.reload()
@@ -118,9 +118,9 @@ class Login extends React.Component {
   }
 
   componentDidMount() {
-    axios.post(`${URL}/_api/fee_check`, {}).then(
+    axios.post(`${API_URL}/fee_check`, {}).then(
       res => {
-        if (res.data)
+        if (res.data.login)
           window.location.href = '/'
       }
     )

@@ -25,10 +25,9 @@ import AddIcon from '@material-ui/icons/Add'
 import SearchIcon from '@material-ui/icons/Search'
 import axios from 'axios'
 import { withSnackbar } from 'notistack'
+import API_URL from '../constants'
 
 axios.defaults.withCredentials = true
-
-const URL = 'http://localhost:8080'
 
 const styles = (theme) => ({
   root: {
@@ -111,7 +110,7 @@ class Paid extends React.Component {
     }
   }
   fetchStudentList() {
-    axios.get(`${URL}/_api/students`).then(
+    axios.get(`${API_URL}/students`).then(
       res => this.setState({ all: res.data })
     )
   }
@@ -120,9 +119,9 @@ class Paid extends React.Component {
       this.fetchStudentList()
     }
     else {
-      axios.post(`${URL}/_api/fee_check`, {}).then(
-        res => {
-          if (!res.data)
+      axios.post(`${API_URL}/fee_check`, {}).then(res => res.data).then(
+        json => {
+          if (!json.login)
             window.location.href = '/login'
           else {
             this.setState({ login: true })
@@ -155,7 +154,7 @@ class Paid extends React.Component {
     this.setState({ id: e })
   }
   handlePost() {
-    axios.post(`${URL}/_api/pay`, { id: this.state.id.trim() }).then(
+    axios.post(`${API_URL}/pay`, { id: this.state.id.trim() }).then(
       res => {
         this.setState({
           open: false,
