@@ -255,7 +255,6 @@ class Paid extends React.Component {
   }
   render() {
     const { classes, fullScreen } = this.props
-    console.log(this.state.id2name[this.state.id.trim()])
     return (
       <div className={classes.root}>
         <div className={classes.content}>
