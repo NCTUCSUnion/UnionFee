@@ -110,6 +110,7 @@ class Paid extends React.Component {
       idBatch: '',            // The Textfield in batch dialog
       resultBatch: ['', ''],  // The Batch Results
       id2paid: {},            // The map from id to paid
+      id2name: {},            // The map from id to name
     }
     this.changeIndex = this.changeIndex.bind(this)
 
@@ -137,7 +138,9 @@ class Paid extends React.Component {
       all => {
         const id2paid = {}
         all.forEach(item => id2paid[item.id] = (item.paid === 1))
-        this.setState({ all, id2paid })
+        const id2name = {}
+        all.forEach(item => id2name[item.id] = item.name)
+        this.setState({ all, id2paid, id2name })
       }
     )
   }
@@ -252,6 +255,7 @@ class Paid extends React.Component {
   }
   render() {
     const { classes, fullScreen } = this.props
+    console.log(this.state.id2name[this.state.id.trim()])
     return (
       <div className={classes.root}>
         <div className={classes.content}>
@@ -330,7 +334,7 @@ class Paid extends React.Component {
               autoFocus
               onKeyPress={(e) => { if (e.key === 'Enter') this.handlePost() }}
             />
-            <div className={fullScreen ? classes.div : classes.span}>{`${this.state.all.filter(s => s.id === this.state.id.trim()).map(s => `${s.name} (${s.paid ? '已繳費' : '尚未繳費'})`).join('')}`}</div>
+            <div className={fullScreen ? classes.div : classes.span}>{this.state.id2name[this.state.id.trim()] && `${this.state.id2name[this.state.id.trim()]} (${this.state.id2paid[this.state.id.trim()] ? '已繳費' : '尚未繳費'})`}</div>
           </DialogContent>
           <DialogActions>
             <Button onClick={this.handleClose} color="secondary">
@@ -463,7 +467,7 @@ class Paid extends React.Component {
               type='tel'
               autoFocus
             />
-            <div>{`${this.state.all.filter(s => s.id === this.state.id.trim()).map(s => `${s.name} (${s.paid ? '已繳費' : '尚未繳費'})`).join('')}`}</div>
+            <div>{this.state.id2name[this.state.id.trim()] && `${this.state.id2name[this.state.id.trim()]} (${this.state.id2paid[this.state.id.trim()] ? '已繳費' : '尚未繳費'})`}</div>
           </DialogContent>
         </Popover>
       </div>
