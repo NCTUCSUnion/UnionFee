@@ -96,6 +96,39 @@ const styles = (theme) => ({
   },
 })
 
+const PaidTextField = withStyles({
+  root: {
+    '& label.Mui-disabled': {
+      color: '#4caf50',
+    },
+    '& .MuiOutlinedInput-root.Mui-disabled': {
+      '& fieldset': {
+        borderColor: '#4caf50',
+        borderWidth: '2px',
+      },
+    },
+    '& .MuiInputBase-root.Mui-disabled': {
+      color: 'black',
+    },
+  },
+})(TextField);
+const NotPaidTextField = withStyles({
+  root: {
+    '& label.Mui-disabled': {
+      color: '#f44336',
+    },
+    '& .MuiOutlinedInput-root.Mui-disabled': {
+      '& fieldset': {
+        borderColor: '#f44336',
+        borderWidth: '2px',
+      },
+    },
+    '& .MuiInputBase-root.Mui-disabled': {
+      color: 'black',
+    },
+  },
+})(TextField);
+
 class Paid extends React.Component {
   constructor(props) {
     super(props)
@@ -133,7 +166,7 @@ class Paid extends React.Component {
       this.tab.push(`${("0" + i).substr(-2)}級`)
     }
   }
-  fetchStudentList() {
+  componentDidMount() {
     axios.get(`${API_URL}/students`).then(res => res.data).then(
       all => {
         const id2paid = {}
@@ -142,28 +175,7 @@ class Paid extends React.Component {
         all.forEach(item => id2name[item.id] = item.name)
         this.setState({ all, id2paid, id2name })
       }
-    )
-  }
-  componentDidMount() {
-    if (this.state.login) {
-      this.fetchStudentList()
-    }
-    else {
-      axios.post(`${API_URL}/fee_check`, {}).then(res => res.data).then(
-        json => {
-          if (!json.login)
-            window.location.href = '/login'
-          else {
-            this.setState({ login: true })
-            this.fetchStudentList()
-          }
-        }
-      ).catch(
-        err => {
-          window.location.href = '/login'
-        }
-      )
-    }
+    ).catch(err => { if (err.response && err.response.status === 401) window.location.href = '/login' })
   }
 
   changeIndex(e, v) {
@@ -380,15 +392,15 @@ class Paid extends React.Component {
                     flexDirection: 'row',
                     justifyContent: 'space-between'
                   }}>
-                    <TextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
-                      margin="normal" variant="outlined"
+                    <PaidTextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
+                      margin="normal" variant="outlined" disabled
                       InputLabelProps={{
                         shrink: true,
                       }}
                     />
                     &nbsp;
-                    <TextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
-                      margin="normal" variant="outlined"
+                    <NotPaidTextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
+                      margin="normal" variant="outlined" disabled
                       InputLabelProps={{
                         shrink: true,
                       }}
@@ -416,14 +428,14 @@ class Paid extends React.Component {
                     flexDirection: 'column',
                     justifyContent: 'space-between'
                   }}>
-                    <TextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
-                      margin="normal" variant="outlined"
+                    <PaidTextField label="已繳費" multiline rows={6} value={this.state.resultBatch[0]}
+                      margin="normal" variant="outlined" disabled
                       InputLabelProps={{
                         shrink: true,
                       }}
                     />
-                    <TextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
-                      margin="normal" variant="outlined"
+                    <NotPaidTextField label="未繳費" multiline rows={6} value={this.state.resultBatch[1]}
+                      margin="normal" variant="outlined" disabled
                       InputLabelProps={{
                         shrink: true,
                       }}
